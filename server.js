@@ -3,13 +3,15 @@ const path = require('path');
 const fs = require('fs');
 const util = require('util');
 const PORT = 3001;
-const notes = require('./db/db.json');
+const { v4: uuidv4 } = require('uuid');
 
 const app = express();
 
 // Middleware for parsing application/json
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
+
 
 // Utility functions
 const readFromFile = util.promisify(fs.readFile);
@@ -29,13 +31,33 @@ app.get('/api/notes', (req, res) => {
 
 // POST request to receive new note and add to file
 app.post('/api/notes', (req, res) => {
-  console.log(req.body);
-  if (req.body.title && req.body.text) {
+  const {title, text} = req.body;
+  if (title && text) {
     console.info(`${req.method} request received to add new note`);
-    res.status(200).json(`Note was successfully added`);
-    return;
+    const newNote = {
+        title,
+        text, 
+        id: uuidv4(),
+    };
+
+    readFromFile("./db/db.json")
+    .then((data)=> {
+    const notes = JSON.parse(data);
+    notes.push(newNote);
+    writeToFile("./db/db.json", JSON.stringify(notes));
+    });
+
+    const response = {
+      status: "success",
+      body: newNote,
+    }
+
+
+    res.status(201).json(response);
+  } else{
+    res.status(500).json(`Unable to post note`);
   }
-  res.status(404).json(`Unable to post note`);
+  
 }
 );
 
