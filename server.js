@@ -61,6 +61,21 @@ app.post('/api/notes', (req, res) => {
 }
 );
 
+app.delete("/api/notes/:id",(req, res)=>{
+  readFromFile("./db/db.json")
+  .then((data)=>{
+  const database = JSON.parse(data);
+  for (let i = 0; i < database.length; i++){
+    if(database[i].id === req.params.id){
+      database.splice(i, 1);
+      writeToFile("./db/db.json", JSON.stringify(database));
+      return res.status(200).json(`Note was successfully removed`)
+    }
+  }
+  return res.status(500).json(`Error deleting Note`)
+  })
+})
+
 app.get("/notes", (req, res) =>
   res.sendFile(path.join(__dirname, "/public/notes.html"))
 );
